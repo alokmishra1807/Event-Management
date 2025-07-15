@@ -132,3 +132,34 @@ export const detailEvent = async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
+export const cancelRegistration = async (req, res) => {
+  try {
+    const {user_id,event_id} = req.body;
+
+    if (!user_id||!event_id) {
+      return res.status(400).json({ messgae:"user_id and event_id are required"});
+    }
+
+    const [found] = await sql`
+      SELECT 1 FROM registrations
+      WHERE user_id = ${user_id} AND event_id = ${event_id};
+    `;
+
+    if (!found) {
+      return res.status(404).json({ error: "User is not registered for this event" });
+    }
+
+    await sql`
+      DELETE FROM registrations
+      WHERE user_id = ${user_id} AND event_id = ${event_id};
+    `;
+
+    return res.status(200).json({ message:"registration canceled succssfully"});
+
+  } catch (error) {
+    console.error("Error canceling registration:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
