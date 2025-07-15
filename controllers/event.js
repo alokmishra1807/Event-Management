@@ -163,3 +163,21 @@ export const cancelRegistration = async (req, res) => {
     return res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+
+export const sortedEvent = async (req, res) => {
+  try {
+    const now = new Date().toISOString();
+
+    const events = await sql`
+      SELECT * FROM events
+      WHERE date_time > ${now}
+      ORDER BY date_time ASC, location ASC;
+    `;
+
+    return res.status(200).json({ events });
+  } catch (error) {
+    console.error("Error listing upcoming events:", error);
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
