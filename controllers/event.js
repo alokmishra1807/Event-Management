@@ -156,11 +156,11 @@ export const cancelRegistration = async (req, res) => {
       WHERE user_id = ${user_id} AND event_id = ${event_id};
     `;
 
-    return res.status(200).json({ message:"registration canceled succssfully"});
+    return res.status(200).json({message:"registration canceled succssfully"});
 
   } catch (error) {
-    console.error("Error canceling registration:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error canceling registration:",error);
+    return res.status(500).json({ error:"Internal Server Error" });
   }
 };
 
@@ -177,7 +177,49 @@ export const sortedEvent = async (req, res) => {
 
     return res.status(200).json({ events });
   } catch (error) {
-    console.error("Error listing upcoming events:", error);
+    console.error("error listing upcoming events:",error);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+
+export const EventStats = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message:"id is required in URL params"});
+    }
+
+    
+    const [event] = await sql`
+      SELECT id, title, capacity FROM events WHERE id = ${id};
+    `;
+
+    if (!event) {
+      return res.status(404).json({ message:"event not found" });
+    }
+
+    const [{ count }] = await sql`
+      SELECT COUNT(*)::int AS count
+      FROM registrations
+      WHERE event_id = ${id};
+    `;
+
+    const totalRegistrations = count;
+    const remainingCapacity = event.capacity - totalRegistrations;
+    const percentUsed = ((totalRegistrations / event.capacity) * 100).toFixed(1);
+
+    return res.status(200).json({
+      event_id: event.id,
+      title: event.title,
+      total_registrations: totalRegistrations,
+      remaining_capacity: remainingCapacity,
+      percent_used: Number(percentUsed)
+    });
+
+  } catch (error) {
+    console.error("error getting event stats:", error);
+    return res.status(500).json({ error: "internal server error" });
   }
 };
